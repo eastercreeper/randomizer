@@ -26,6 +26,6 @@ private:
 
     const Character* m_selected = nullptr;
 
-    static constexpr float kThumbSize  = 80.0f;
+    static constexpr float kThumbSize  = 120.0f;
     static constexpr float kResultSize = 150.0f;
 };
