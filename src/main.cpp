@@ -12,6 +12,7 @@
 #include "Randomizer.h"
 #include "AppUI.h"
 
+#include <algorithm>
 #include <cstdio>
 
 static void GlfwErrorCallback(int error, const char* description)
@@ -57,6 +58,17 @@ int main()
     // ── Application logic (created after OpenGL context is ready) ─────────
     CharacterManager mgr;
     mgr.LoadAssets();
+
+    // Auto-size window width based on loaded character count, capped at 5 columns.
+    {
+        constexpr int kThumbSize   = 80;
+        constexpr int kCellWidth   = kThumbSize + 12;
+        constexpr int kSidePadding = 40;
+        const int characterCount = static_cast<int>(mgr.GetCharacters().size());
+        const int cols = std::clamp(characterCount, 1, 5);
+        const int computedWidth = cols * kCellWidth + kSidePadding;
+        glfwSetWindowSize(window, computedWidth, 800);
+    }
 
     Randomizer  rng;
     AppUI       ui(mgr, rng);
