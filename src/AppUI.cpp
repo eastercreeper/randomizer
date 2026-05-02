@@ -6,6 +6,19 @@
 #include <string>
 #include <vector>
 
+// Returns a display size that fits `imgW x imgH` within a `boxSize x boxSize`
+// square while preserving the original aspect ratio.
+static ImVec2 FitInBox(int imgW, int imgH, float boxSize)
+{
+    if (imgW <= 0 || imgH <= 0)
+        return ImVec2(boxSize, boxSize);
+    const float aspect = static_cast<float>(imgW) / static_cast<float>(imgH);
+    if (aspect >= 1.f)
+        return ImVec2(boxSize, boxSize / aspect);
+    else
+        return ImVec2(boxSize * aspect, boxSize);
+}
+
 AppUI::AppUI(CharacterManager& mgr, Randomizer& rng)
     : m_mgr(mgr), m_rng(rng)
 {}
@@ -105,16 +118,18 @@ void AppUI::RenderCharacterGrid()
 
         if (ch.textureId != 0) {
             // ImGui 1.89+ ImageButton signature: (str_id, tex_id, size, ...)
+            const ImVec2 displaySize = FitInBox(ch.width, ch.height, kThumbSize);
             clicked = ImGui::ImageButton(
                 btnId.c_str(),
                 reinterpret_cast<ImTextureID>(
                     static_cast<uintptr_t>(ch.textureId)),
-                ImVec2(kThumbSize, kThumbSize),
+                displaySize,
                 ImVec2(0.f, 0.f), ImVec2(1.f, 1.f),
                 ImVec4(0.f, 0.f, 0.f, 0.f),
                 tint);
         } else {
-            // Fallback when texture failed to load
+            // Fallback when texture failed to load – btnId starts with "##"
+            // so ImGui hides it; prefix the visible name separately.
             clicked = ImGui::Button(
                 (ch.name + btnId).c_str(),
                 ImVec2(kThumbSize, kThumbSize));
@@ -148,10 +163,12 @@ void AppUI::RenderResultPanel()
     }
 
     if (m_selected->textureId != 0) {
+        const ImVec2 displaySize =
+            FitInBox(m_selected->width, m_selected->height, kResultSize);
         ImGui::Image(
             reinterpret_cast<ImTextureID>(
                 static_cast<uintptr_t>(m_selected->textureId)),
-            ImVec2(kResultSize, kResultSize));
+            displaySize);
         ImGui::SameLine();
     }
 
