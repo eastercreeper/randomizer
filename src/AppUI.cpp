@@ -90,8 +90,10 @@ void AppUI::RenderCharacterGrid()
         return;
     }
 
+    const ImGuiStyle& style = ImGui::GetStyle();
+    const float cellW   = kThumbSize + style.FramePadding.x * 2.f + style.ItemSpacing.x;
     const float avail   = ImGui::GetContentRegionAvail().x;
-    const int   columns = std::max(1, static_cast<int>(avail / (kThumbSize + 12.f)));
+    const int   columns = std::max(1, static_cast<int>((avail + style.ItemSpacing.x) / cellW));
 
     int col = 0;
     for (auto& ch : chars) {
@@ -117,8 +119,12 @@ void AppUI::RenderCharacterGrid()
         bool clicked = false;
 
         if (ch.textureId != 0) {
-            // ImGui 1.89+ ImageButton signature: (str_id, tex_id, size, ...)
             const ImVec2 displaySize = FitInBox(ch.width, ch.height, kThumbSize);
+            // Pad FramePadding so the outer button is always kThumbSize×kThumbSize,
+            // keeping every cell the same width regardless of image aspect ratio.
+            const float padX = (kThumbSize - displaySize.x) * 0.5f + style.FramePadding.x;
+            const float padY = (kThumbSize - displaySize.y) * 0.5f + style.FramePadding.y;
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(padX, padY));
             clicked = ImGui::ImageButton(
                 btnId.c_str(),
                 reinterpret_cast<ImTextureID>(
@@ -127,6 +133,7 @@ void AppUI::RenderCharacterGrid()
                 ImVec2(0.f, 0.f), ImVec2(1.f, 1.f),
                 ImVec4(0.f, 0.f, 0.f, 0.f),
                 tint);
+            ImGui::PopStyleVar();
         } else {
             // Fallback when texture failed to load – btnId starts with "##"
             // so ImGui hides it; prefix the visible name separately.
