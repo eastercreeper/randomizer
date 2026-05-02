@@ -29,7 +29,7 @@ FetchContent_MakeAvailable(imgui)
 FetchContent_Declare(
     stb
     GIT_REPOSITORY https://github.com/nothings/stb.git
-    GIT_TAG        master
+    GIT_TAG        f75e8d1cad7d90d72ef7a4661f1b994ef78b4e31 # 2024-06-08
 )
 FetchContent_MakeAvailable(stb)
 
