@@ -33,6 +33,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(stb)
 
+# ── Embed-assets option ───────────────────────────────────────────────────────
+# When ON (the default), all images under assets/ are compiled directly into
+# the executable so the binary runs without an external assets/ folder.
+# Set -DEMBED_ASSETS=OFF to revert to the runtime copy-assets behaviour.
+option(EMBED_ASSETS "Compile image assets into the executable at build time" ON)
+
 # ── Sources ───────────────────────────────────────────────────────────────────
 set(APP_SOURCES
     src/main.cpp
@@ -52,7 +58,50 @@ set(IMGUI_SOURCES
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
-add_executable(CharacterRandomizer ${APP_SOURCES} ${IMGUI_SOURCES} app.rc)
+# ── Embedded-asset code generation ───────────────────────────────────────────
+if(EMBED_ASSETS)
+    set(GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+    file(MAKE_DIRECTORY "${GENERATED_DIR}")
+
+    set(GENERATED_HEADER "${GENERATED_DIR}/EmbeddedAssets.h")
+    set(GENERATED_SOURCE "${GENERATED_DIR}/EmbeddedAssets.cpp")
+
+    # Collect all image files so CMake can track them as build dependencies.
+    file(GLOB_RECURSE ASSET_FILES
+        "${CMAKE_SOURCE_DIR}/assets/pus/*"
+        "${CMAKE_SOURCE_DIR}/assets/scissors/*"
+        "${CMAKE_SOURCE_DIR}/assets/urbino/*"
+    )
+    list(FILTER ASSET_FILES EXCLUDE REGEX "\\.gitkeep$")
+
+    # Generate at configure time so the files exist before the first build.
+    execute_process(
+        COMMAND ${CMAKE_COMMAND}
+            -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+            -DOUTPUT_DIR=${GENERATED_DIR}
+            -P ${CMAKE_SOURCE_DIR}/cmake/GenerateEmbeddedAssets.cmake
+        RESULT_VARIABLE GEN_RESULT
+    )
+    if(NOT GEN_RESULT EQUAL 0)
+        message(FATAL_ERROR "GenerateEmbeddedAssets.cmake failed (exit ${GEN_RESULT})")
+    endif()
+
+    # Re-generate at build time whenever any asset file (or the script) changes.
+    add_custom_command(
+        OUTPUT  "${GENERATED_SOURCE}" "${GENERATED_HEADER}"
+        COMMAND ${CMAKE_COMMAND}
+            -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+            -DOUTPUT_DIR=${GENERATED_DIR}
+            -P ${CMAKE_SOURCE_DIR}/cmake/GenerateEmbeddedAssets.cmake
+        DEPENDS ${ASSET_FILES}
+                "${CMAKE_SOURCE_DIR}/cmake/GenerateEmbeddedAssets.cmake"
+        COMMENT "Regenerating embedded asset sources"
+    )
+
+    list(APPEND APP_SOURCES "${GENERATED_SOURCE}")
+endif()
+
+add_executable(CharacterRandomizer ${APP_SOURCES} ${IMGUI_SOURCES})
 
 target_include_directories(CharacterRandomizer PRIVATE
     src/
@@ -61,6 +110,11 @@ target_include_directories(CharacterRandomizer PRIVATE
     ${stb_SOURCE_DIR}
 )
 
+if(EMBED_ASSETS)
+    target_include_directories(CharacterRandomizer PRIVATE "${GENERATED_DIR}")
+    target_compile_definitions(CharacterRandomizer PRIVATE EMBED_ASSETS=1)
+endif()
+
 find_package(OpenGL REQUIRED)
 
 target_link_libraries(CharacterRandomizer PRIVATE
@@ -68,13 +122,15 @@ target_link_libraries(CharacterRandomizer PRIVATE
     OpenGL::GL
 )
 
-# ── Copy assets to binary directory on every build ───────────────────────────
-add_custom_command(TARGET CharacterRandomizer POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/assets"
-        "$<TARGET_FILE_DIR:CharacterRandomizer>/assets"
-    COMMENT "Copying assets to output directory"
-)
+# ── Copy assets to binary directory (only when NOT embedding) ─────────────────
+if(NOT EMBED_ASSETS)
+    add_custom_command(TARGET CharacterRandomizer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/assets"
+            "$<TARGET_FILE_DIR:CharacterRandomizer>/assets"
+        COMMENT "Copying assets to output directory"
+    )
+endif()
 
 # ── Set debugger working directory (MSVC / CLion CMake) ──────────────────────
 set_target_properties(CharacterRandomizer PROPERTIES
