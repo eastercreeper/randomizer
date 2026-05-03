@@ -65,7 +65,7 @@ int main()
         constexpr int kCellWidth   = kThumbSize + 12;
         constexpr int kSidePadding = 40;
         const int characterCount = static_cast<int>(mgr.GetCharacters().size());
-        const int cols = std::clamp(characterCount, 1, 5);
+        const int cols = std::clamp(characterCount, 1, 9);
         const int computedWidth = cols * kCellWidth + kSidePadding;
         glfwSetWindowSize(window, computedWidth, 800);
     }
