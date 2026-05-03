@@ -4,11 +4,12 @@ A C++20 GUI application built with **Dear ImGui + GLFW + OpenGL 3.3**.
 
 ## Features
 
-- Loads character images from `assets/pus/`, `assets/scissors/`, `assets/urbino/`
+- All character images are **embedded directly in the executable** at build time – no external `assets/` folder is needed to run the app.
 - Displays every image as a clickable thumbnail; click to **enable / disable** that character
 - **Category filter checkboxes** (Pus / Scissors / Urbino)
 - **Randomize** button – picks one random character from the enabled + filtered pool and shows it enlarged with its name and category
-- **Reload Assets** button – rescans all asset folders and re-uploads textures
+- **Randomize Attack/Defense** button – picks one defender (Pus/Urbino) and one attacker (Scissors/Urbino)
+- **Reload Assets** button – re-uploads embedded textures to the GPU (useful after a context reset)
 
 Supported image formats: PNG, JPG, JPEG, BMP, TGA (via stb_image).
 
@@ -29,24 +30,30 @@ Supported image formats: PNG, JPG, JPEG, BMP, TGA (via stb_image).
 
 1. **Open** the repository folder in CLion (`File → Open`).
 2. CLion will detect `CMakeLists.txt` and start CMake configuration automatically.  
-   FetchContent will download GLFW, Dear ImGui, and stb on the first run – this may take a minute.
+   FetchContent will download GLFW, Dear ImGui, and stb on the first run – this may take a minute.  
+   The asset-embedding step also runs at configure time and generates `build/generated/EmbeddedAssets.cpp`.
 3. Select the `CharacterRandomizer` run target and click **Run**.
 
-> **Working directory** – the `POST_BUILD` step copies `assets/` next to the executable, so the binary can always find its images regardless of build location.  
-> CLion also sets the debugger working directory to the output folder via `VS_DEBUGGER_WORKING_DIRECTORY`.
+The resulting `CharacterRandomizer.exe` is fully self-contained – you can copy it anywhere and run it without an `assets/` folder.
 
-### Adding characters
+> **Tip:** To build without embedding (external assets folder mode), pass `-DEMBED_ASSETS=OFF` to CMake:  
+> `cmake -S . -B build -DEMBED_ASSETS=OFF`
 
-Drop image files (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`) into the matching folder:
+### Adding or replacing character images
 
-```
-assets/
-  pus/        ← pus characters
-  scissors/   ← scissors characters
-  urbino/     ← urbino characters
-```
+1. Drop image files (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`) into the appropriate folder:
 
-Then press **Reload Assets** inside the app, or rebuild to trigger the copy step again.
+   ```
+   assets/
+     pus/        ← pus characters
+     scissors/   ← scissors characters
+     urbino/     ← urbino characters
+   ```
+
+2. **Rebuild** the project – CMake detects the changed asset files and automatically regenerates the embedded C++ source before compiling.  
+   You do *not* need to manually run any extra tool.
+
+> **Note:** With `EMBED_ASSETS=ON` (the default), the **Reload Assets** button re-uploads the already-compiled texture data from memory; it does not re-scan a folder on disk.
 
 ---
 
@@ -54,7 +61,9 @@ Then press **Reload Assets** inside the app, or rebuild to trigger the copy step
 
 ```
 CharacterRandomizer/
-├── CMakeLists.txt           – build script; fetches GLFW, ImGui, stb
+├── CMakeLists.txt           – build script; fetches GLFW, ImGui, stb; embeds assets
+├── cmake/
+│   └── GenerateEmbeddedAssets.cmake  – generates EmbeddedAssets.h/.cpp from assets/
 ├── assets/
 │   ├── pus/
 │   ├── scissors/
@@ -62,8 +71,8 @@ CharacterRandomizer/
 └── src/
     ├── main.cpp             – window creation, OpenGL context, main loop
     ├── Character.h          – POD struct (name, category, textureId, enabled…)
-    ├── TextureLoader.h/.cpp – stb_image → OpenGL texture upload/free
-    ├── CharacterManager.h/.cpp – scans asset dirs, owns Character list
+    ├── TextureLoader.h/.cpp – stb_image → OpenGL texture upload/free (file + memory)
+    ├── CharacterManager.h/.cpp – loads Character list from embedded assets or disk
     ├── Randomizer.h/.cpp    – random pick from a filtered pool
     ├── AppUI.h/.cpp         – all Dear ImGui rendering
     └── stb_image_impl.cpp   – single TU that defines STB_IMAGE_IMPLEMENTATION
