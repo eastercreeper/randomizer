@@ -23,7 +23,7 @@ Supported image formats: PNG, JPG, JPEG, BMP, TGA (via stb_image).
 |------|-------|
 | CMake ≥ 3.20 | bundled with CLion |
 | Git | required by FetchContent to clone GLFW / ImGui / stb |
-| C++ compiler | MSVC (Visual Studio Build Tools) or MinGW-w64 |
+| C++ compiler | MSVC (Visual Studio Build Tools) or MinGW-w64 (CLion bundled) |
 | OpenGL driver | any modern GPU driver |
 
 ### Steps
@@ -38,6 +38,40 @@ The resulting `CharacterRandomizer.exe` is fully self-contained – you can copy
 
 > **Tip:** To build without embedding (external assets folder mode), pass `-DEMBED_ASSETS=OFF` to CMake:  
 > `cmake -S . -B build -DEMBED_ASSETS=OFF`
+
+### Portable single-exe build (MinGW / CLion bundled toolchain)
+
+If you use CLion's bundled MinGW toolchain, the build automatically links the GCC
+runtime (`libgcc_s_seh-1.dll`), C++ standard library (`libstdc++-6.dll`), and
+winpthread (`libwinpthread-1.dll`) **statically** into the executable.  The
+resulting `.exe` is therefore self-contained and runs on a clean Windows machine
+without needing to ship those DLLs alongside it.
+
+This is handled in `CMakeLists.txt` via the following (MinGW-only) linker options:
+
+```cmake
+target_link_options(CharacterRandomizer PRIVATE
+    -static-libgcc
+    -static-libstdc++
+    -Wl,-Bstatic,-lwinpthread,-Bdynamic
+)
+```
+
+These flags are guarded by `if(WIN32 AND MINGW)` so MSVC builds are completely unaffected.
+
+#### Building a Release exe from CLion
+
+1. Go to **Settings → Build, Execution, Deployment → CMake**.
+2. Add a **Release** profile:
+   - **Build type:** `Release`
+   - **Generation path:** `cmake-build-release`
+3. Select the **Release** profile in the top-right toolbar.
+4. Click the **Build** (hammer) button or use **Build → Build Project**.
+5. The final portable executable is at:
+   ```
+   cmake-build-release/CharacterRandomizer.exe
+   ```
+   Copy it anywhere on any Windows machine – no extra DLLs or folders required.
 
 ### Adding or replacing character images
 
@@ -62,6 +96,8 @@ The resulting `CharacterRandomizer.exe` is fully self-contained – you can copy
 ```
 CharacterRandomizer/
 ├── CMakeLists.txt           – build script; fetches GLFW, ImGui, stb; embeds assets
+├── app.rc                   – Windows resource script (embeds icon.ico into the exe)
+├── icon.ico                 – application icon (Windows)
 ├── cmake/
 │   └── GenerateEmbeddedAssets.cmake  – generates EmbeddedAssets.h/.cpp from assets/
 ├── assets/
