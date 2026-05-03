@@ -134,9 +134,9 @@ target_link_libraries(CharacterRandomizer PRIVATE
 # statically while still allowing other system libraries to be shared.
 if(WIN32 AND MINGW)
     target_link_options(CharacterRandomizer PRIVATE
-        -static-libgcc
-        -static-libstdc++
-        -Wl,-Bstatic,-lwinpthread,-Bdynamic
+            -static
+            -static-libgcc
+            -static-libstdc++
     )
 endif()
 
