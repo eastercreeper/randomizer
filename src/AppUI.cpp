@@ -58,6 +58,8 @@ void AppUI::RenderFilterBar()
     ImGui::SameLine(0.f, 20.f);
 
     if (ImGui::Button("Randomize")) {
+        m_selectedAttack  = nullptr;
+        m_selectedDefense = nullptr;
         std::vector<const Character*> pool;
         for (const auto& ch : m_mgr.GetCharacters()) {
             if (!ch.enabled)                                         continue;
@@ -70,8 +72,24 @@ void AppUI::RenderFilterBar()
     }
 
     ImGui::SameLine();
-    if (ImGui::Button("Reload Assets")) {
+    if (ImGui::Button("Randomize Attack/Defense")) {
         m_selected = nullptr;
+        std::vector<const Character*> defensePool;
+        std::vector<const Character*> attackPool;
+        for (const auto& ch : m_mgr.GetCharacters()) {
+            if (!ch.enabled) continue;
+            if (ch.category == "pus"     || ch.category == "urbino")   defensePool.push_back(&ch);
+            if (ch.category == "scissors"|| ch.category == "urbino")   attackPool.push_back(&ch);
+        }
+        m_selectedDefense = m_rng.Pick(defensePool);
+        m_selectedAttack  = m_rng.Pick(attackPool);
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("Reload Assets")) {
+        m_selected        = nullptr;
+        m_selectedAttack  = nullptr;
+        m_selectedDefense = nullptr;
         m_mgr.ReloadAssets();
     }
 }
@@ -110,8 +128,10 @@ void AppUI::RenderCharacterGrid()
             ? ImVec4(1.f, 1.f, 1.f, 1.f)
             : ImVec4(0.3f, 0.3f, 0.3f, 0.7f);
 
-        // Highlight the currently selected character
-        const bool isSelected = (m_selected == &ch);
+        // Highlight the currently selected character (single or attack/defense)
+        const bool isSelected = (m_selected == &ch)
+                             || (m_selectedAttack  == &ch)
+                             || (m_selectedDefense == &ch);
         if (isSelected)
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.55f, 1.f, 1.f));
 
@@ -164,28 +184,62 @@ void AppUI::RenderCharacterGrid()
 void AppUI::RenderResultPanel()
 {
     ImGui::Text("Result:");
-    if (!m_selected) {
-        ImGui::TextDisabled("Press 'Randomize' to pick a character.");
+
+    // ── Single-pick result ────────────────────────────────────────────────────
+    if (m_selected) {
+        if (m_selected->textureId != 0) {
+            const ImVec2 displaySize =
+                FitInBox(m_selected->width, m_selected->height, kResultSize);
+            ImGui::Image(
+                reinterpret_cast<ImTextureID>(
+                    static_cast<uintptr_t>(m_selected->textureId)),
+                displaySize);
+            ImGui::SameLine();
+        }
+        ImGui::BeginGroup();
+        ImGui::Spacing();
+        ImGui::Text("Name:     %s", m_selected->name.c_str());
+        ImGui::Text("Category: %s", m_selected->category.c_str());
+        ImGui::Text("File:     %s", m_selected->filepath.c_str());
+        if (m_selected->width > 0)
+            ImGui::Text("Size:     %d x %d px",
+                        m_selected->width, m_selected->height);
+        ImGui::EndGroup();
         return;
     }
 
-    if (m_selected->textureId != 0) {
-        const ImVec2 displaySize =
-            FitInBox(m_selected->width, m_selected->height, kResultSize);
-        ImGui::Image(
-            reinterpret_cast<ImTextureID>(
-                static_cast<uintptr_t>(m_selected->textureId)),
-            displaySize);
-        ImGui::SameLine();
+    // ── Attack / Defense result ───────────────────────────────────────────────
+    if (m_selectedAttack || m_selectedDefense) {
+        auto renderSide = [&](const char* label, const Character* ch) {
+            ImGui::Text("%s:", label);
+            if (!ch) {
+                ImGui::TextDisabled("  (none available)");
+                return;
+            }
+            if (ch->textureId != 0) {
+                const ImVec2 displaySize =
+                    FitInBox(ch->width, ch->height, kResultSize);
+                ImGui::Image(
+                    reinterpret_cast<ImTextureID>(
+                        static_cast<uintptr_t>(ch->textureId)),
+                    displaySize);
+                ImGui::SameLine();
+            }
+            ImGui::BeginGroup();
+            ImGui::Spacing();
+            ImGui::Text("Name:     %s", ch->name.c_str());
+            ImGui::Text("Category: %s", ch->category.c_str());
+            ImGui::Text("File:     %s", ch->filepath.c_str());
+            if (ch->width > 0)
+                ImGui::Text("Size:     %d x %d px", ch->width, ch->height);
+            ImGui::EndGroup();
+        };
+
+        renderSide("Defense (Pus / Urbino)",       m_selectedDefense);
+        ImGui::Spacing();
+        renderSide("Attack  (Scissors / Urbino)",  m_selectedAttack);
+        return;
     }
 
-    ImGui::BeginGroup();
-    ImGui::Spacing();
-    ImGui::Text("Name:     %s", m_selected->name.c_str());
-    ImGui::Text("Category: %s", m_selected->category.c_str());
-    ImGui::Text("File:     %s", m_selected->filepath.c_str());
-    if (m_selected->width > 0)
-        ImGui::Text("Size:     %d x %d px",
-                    m_selected->width, m_selected->height);
-    ImGui::EndGroup();
+    ImGui::TextDisabled("Press 'Randomize' to pick a character.");
 }

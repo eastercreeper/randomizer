@@ -24,7 +24,9 @@ private:
     bool m_filterScissors = true;
     bool m_filterUrbino   = true;
 
-    const Character* m_selected = nullptr;
+    const Character* m_selected        = nullptr;
+    const Character* m_selectedAttack  = nullptr;
+    const Character* m_selectedDefense = nullptr;
 
     static constexpr float kThumbSize  = 120.0f;
     static constexpr float kResultSize = 400.0f;
