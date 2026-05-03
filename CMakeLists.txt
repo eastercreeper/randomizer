@@ -52,7 +52,7 @@ set(IMGUI_SOURCES
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
-add_executable(CharacterRandomizer ${APP_SOURCES} ${IMGUI_SOURCES})
+add_executable(CharacterRandomizer ${APP_SOURCES} ${IMGUI_SOURCES} app.rc)
 
 target_include_directories(CharacterRandomizer PRIVATE
     src/
