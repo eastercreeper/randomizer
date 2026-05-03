@@ -129,11 +129,22 @@ void AppUI::RenderCharacterGrid()
             : ImVec4(0.3f, 0.3f, 0.3f, 0.7f);
 
         // Highlight the currently selected character (single or attack/defense)
-        const bool isSelected = (m_selected == &ch)
-                             || (m_selectedAttack  == &ch)
-                             || (m_selectedDefense == &ch);
-        if (isSelected)
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.55f, 1.f, 1.f));
+        const bool isSingle  = (m_selected == &ch);
+        const bool isAttack  = (m_selectedAttack  == &ch);
+        const bool isDefense = (m_selectedDefense == &ch);
+        const bool isSelected = isSingle || isAttack || isDefense;
+        if (isSelected) {
+            ImVec4 highlightColor;
+            if (isSingle)
+                highlightColor = ImVec4(0.2f, 0.55f, 1.f, 1.f);   // blue (single pick)
+            else if (isAttack && isDefense)
+                highlightColor = ImVec4(0.6f, 0.1f, 0.8f, 1.f);   // purple (both roles)
+            else if (isAttack)
+                highlightColor = ImVec4(0.85f, 0.15f, 0.15f, 1.f); // red (attack)
+            else
+                highlightColor = ImVec4(0.1f, 0.35f, 0.85f, 1.f); // blue (defense)
+            ImGui::PushStyleColor(ImGuiCol_Button, highlightColor);
+        }
 
         const std::string btnId = "##ch_" + ch.category + "_" + ch.name;
         bool clicked = false;
@@ -210,8 +221,13 @@ void AppUI::RenderResultPanel()
 
     // ── Attack / Defense result ───────────────────────────────────────────────
     if (m_selectedAttack || m_selectedDefense) {
-        auto renderSide = [&](const char* label, const Character* ch) {
+        const bool sameCharacter = (m_selectedAttack && m_selectedDefense &&
+                                    m_selectedAttack == m_selectedDefense);
+
+        auto renderSide = [&](const char* label, const Character* ch, ImVec4 labelColor) {
+            ImGui::PushStyleColor(ImGuiCol_Text, labelColor);
             ImGui::Text("%s:", label);
+            ImGui::PopStyleColor();
             if (!ch) {
                 ImGui::TextDisabled("  (none available)");
                 return;
@@ -235,9 +251,17 @@ void AppUI::RenderResultPanel()
             ImGui::EndGroup();
         };
 
-        renderSide("Defense (Pus / Urbino)",       m_selectedDefense);
+        const ImVec4 purpleColor = ImVec4(0.7f, 0.2f, 0.9f, 1.f);
+        const ImVec4 blueColor   = ImVec4(0.3f, 0.6f, 1.f,  1.f);
+        const ImVec4 redColor    = ImVec4(1.f,  0.25f, 0.25f, 1.f);
+
+        renderSide("Defense (Pus / Urbino)",
+                   m_selectedDefense,
+                   sameCharacter ? purpleColor : blueColor);
         ImGui::Spacing();
-        renderSide("Attack  (Scissors / Urbino)",  m_selectedAttack);
+        renderSide("Attack  (Scissors / Urbino)",
+                   m_selectedAttack,
+                   sameCharacter ? purpleColor : redColor);
         return;
     }
 
