@@ -49,6 +49,11 @@ set(APP_SOURCES
     src/AppUI.cpp
 )
 
+# ── Windows application icon ──────────────────────────────────────────────────
+if(WIN32)
+    list(APPEND APP_SOURCES app.rc)
+endif()
+
 set(IMGUI_SOURCES
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -121,6 +126,19 @@ target_link_libraries(CharacterRandomizer PRIVATE
     glfw
     OpenGL::GL
 )
+
+# ── MinGW: static runtime → single portable .exe (no libgcc/libstdc++ DLLs) ──
+# Applied only when building with GCC/MinGW on Windows so MSVC builds are
+# unaffected.  -static-libgcc and -static-libstdc++ fold the GCC and C++
+# runtimes into the binary.  The Wl,-Bstatic/-Bdynamic pair links winpthread
+# statically while still allowing other system libraries to be shared.
+if(WIN32 AND MINGW)
+    target_link_options(CharacterRandomizer PRIVATE
+        -static-libgcc
+        -static-libstdc++
+        -Wl,-Bstatic,-lwinpthread,-Bdynamic
+    )
+endif()
 
 # ── Copy assets to binary directory (only when NOT embedding) ─────────────────
 if(NOT EMBED_ASSETS)
