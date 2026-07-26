@@ -357,7 +357,7 @@ void AppUI::RenderUpgradeRandomizerTab()
             ImGui::BulletText("%s", picks[i].c_str());
     };
 
-    auto renderUpgradeGroup = [](const char* heading, const std::vector<UpgradeCategoryResult>& categories) {
+    auto renderUpgradeGroup = [](const char* heading, const std::vector<UpgradeCategoryResult>& categories, const ImVec4& accentColor) {
         ImGui::Spacing();
         ImGui::Text("%s", heading);
 
@@ -365,14 +365,15 @@ void AppUI::RenderUpgradeRandomizerTab()
             ImGui::Text("%s", category.name.c_str());
             for (int i = 0; i < 2; ++i) {
                 const bool isSelected = (category.selectedIndex == i);
-                const ImVec4 selectedColor = ImVec4(0.95f, 0.85f, 0.2f, 1.f);
-                const ImVec4 normalColor = ImVec4(0.25f, 0.25f, 0.25f, 1.f);
+                const ImVec4 selectedColor = accentColor;
+                const ImVec4 normalColor = ImVec4(accentColor.x, accentColor.y, accentColor.z, 0.f);
                 ImGui::PushStyleColor(ImGuiCol_ChildBg, isSelected ? selectedColor : normalColor);
-                ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.1f, 0.1f, 0.1f, 1.f));
+                ImGui::PushStyleColor(ImGuiCol_Border, accentColor);
                 ImGui::PushID(category.name.c_str());
                 ImGui::PushID(i);
                 ImGui::BeginChild("upgrade_rect", ImVec2(260.f, 32.f), true);
-                ImGui::Text("%s", category.upgrades[i].c_str());
+                if (isSelected)
+                    ImGui::Text("%s", category.upgrades[i].c_str());
                 ImGui::EndChild();
                 ImGui::PopID();
                 ImGui::PopID();
@@ -382,10 +383,21 @@ void AppUI::RenderUpgradeRandomizerTab()
         }
     };
 
+    const ImVec4 weaponColor    = ImVec4(0.20f, 0.55f, 1.00f, 1.f); // blue
+    const ImVec4 characterColor = ImVec4(0.20f, 0.75f, 0.35f, 1.f); // green
+    const ImVec4 abilityColor   = ImVec4(0.95f, 0.85f, 0.20f, 1.f); // yellow
+
     renderPickList("Utility Picks (2)", m_selectedUtilities, 2);
     renderPickList("Secondary Picks (2)", m_selectedSecondaries, 2);
 
-    renderUpgradeGroup("Weapon Upgrades (1 per category)", m_weaponUpgradeResults);
-    renderUpgradeGroup("Character Upgrades (1 per category)", m_characterUpgradeResults);
-    renderUpgradeGroup("Ability Upgrades (1 per category)", m_abilityUpgradeResults);
+    ImGui::Spacing();
+    if (ImGui::BeginTable("UpgradeLayout", 2, ImGuiTableFlags_SizingStretchProp)) {
+        ImGui::TableNextColumn();
+        renderUpgradeGroup("Weapon Upgrades (1 per category)", m_weaponUpgradeResults, weaponColor);
+
+        ImGui::TableNextColumn();
+        renderUpgradeGroup("Ability Upgrades (1 per category)", m_abilityUpgradeResults, abilityColor);
+        renderUpgradeGroup("Character Upgrades (1 per category)", m_characterUpgradeResults, characterColor);
+        ImGui::EndTable();
+    }
 }
