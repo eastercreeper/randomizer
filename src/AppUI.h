@@ -41,6 +41,8 @@ private:
 
     std::vector<std::string>        m_selectedUtilities;
     std::vector<std::string>        m_selectedSecondaries;
+    std::vector<std::string>        m_selectedMelee;
+    std::vector<std::string>        m_selectedAwakening;
     std::vector<UpgradeCategoryResult> m_weaponUpgradeResults;
     std::vector<UpgradeCategoryResult> m_characterUpgradeResults;
     std::vector<UpgradeCategoryResult> m_abilityUpgradeResults;

@@ -28,32 +28,42 @@ struct UpgradeCategoryDefinition
 };
 
 static const std::vector<std::string> kUtilityOptions = {
-    "Utility 1", "Utility 2", "Utility 3", "Utility 4"
+    "Frag", "Flashbang", "Slow", "Windstorm", "Heal", "Smoke", "Tattletale", "Shield", "Interceptor"
 };
 
 static const std::vector<std::string> kSecondaryOptions = {
-    "Secondary 1", "Secondary 2", "Secondary 3", "Secondary 4"
+    "Stinger", "Athena", "Ignis", "Emberspit"
 };
 
-static const std::array<UpgradeCategoryDefinition, 4> kWeaponUpgradeCategories = {{
-    {"Weapon Category 1", {"Weapon Upgrade 1A", "Weapon Upgrade 1B"}},
-    {"Weapon Category 2", {"Weapon Upgrade 2A", "Weapon Upgrade 2B"}},
-    {"Weapon Category 3", {"Weapon Upgrade 3A", "Weapon Upgrade 3B"}},
-    {"Weapon Category 4", {"Weapon Upgrade 4A", "Weapon Upgrade 4B"}}
-}};
+static const std::vector<std::string> kMeleeOptions = {
+    "Greatsword", "Ninjato", "Scythe"
+};
+static const std::vector<std::string> kAwakeningOptions = {
+    "Awakening 2", "Awakening 3"
+};
 
-static const std::array<UpgradeCategoryDefinition, 2> kCharacterUpgradeCategories = {{
-    {"Character Category 1", {"Character Upgrade 1A", "Character Upgrade 1B"}},
-    {"Character Category 2", {"Character Upgrade 2A", "Character Upgrade 2B"}}
-}};
 
-static const std::array<UpgradeCategoryDefinition, 1> kAbilityUpgradeCategories = {{
-    {"Ability Category", {"Ability Upgrade A", "Ability Upgrade B"}}
-}};
+static const std::array<UpgradeCategoryDefinition, 4> kWeaponUpgradeCategories = { {
+    {"Core"},
+    {"Firing"},
+    {"Capacity"},
+    {"Accuracy/Functions"}
+} };
+
+static const std::array<UpgradeCategoryDefinition, 2> kCharacterUpgradeCategories = { {
+    {"Armor"},
+    {"Stringification"}
+} };
+
+static const std::array<UpgradeCategoryDefinition, 2> kAbilityUpgradeCategories = { {
+    {"Active Skill"},
+    {"Passive Skill"}
+} };
 
 AppUI::AppUI(CharacterManager& mgr, Randomizer& rng)
     : m_mgr(mgr), m_rng(rng)
-{}
+{
+}
 
 void AppUI::Render()
 {
@@ -61,10 +71,10 @@ void AppUI::Render()
     ImGui::SetNextWindowPos(ImVec2(0.f, 0.f));
     ImGui::SetNextWindowSize(io.DisplaySize);
     ImGui::Begin("CharacterRandomizer", nullptr,
-                 ImGuiWindowFlags_NoResize |
-                 ImGuiWindowFlags_NoMove   |
-                 ImGuiWindowFlags_NoCollapse |
-                 ImGuiWindowFlags_NoTitleBar);
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoTitleBar);
 
     if (ImGui::BeginTabBar("RandomizerTabs")) {
         if (ImGui::BeginTabItem("Characters")) {
@@ -93,23 +103,23 @@ void AppUI::RenderFilterBar()
 {
     ImGui::Text("Filter:");
     ImGui::SameLine();
-    ImGui::Checkbox("Pus",      &m_filterPus);
+    ImGui::Checkbox("Pus", &m_filterPus);
     ImGui::SameLine();
     ImGui::Checkbox("Scissors", &m_filterScissors);
     ImGui::SameLine();
-    ImGui::Checkbox("Urbino",   &m_filterUrbino);
+    ImGui::Checkbox("Urbino", &m_filterUrbino);
 
     ImGui::SameLine(0.f, 20.f);
 
     if (ImGui::Button("Randomize")) {
-        m_selectedAttack  = nullptr;
+        m_selectedAttack = nullptr;
         m_selectedDefense = nullptr;
         std::vector<const Character*> pool;
         for (const auto& ch : m_mgr.GetCharacters()) {
             if (!ch.enabled)                                         continue;
-            if (ch.category == "pus"      && !m_filterPus)      continue;
+            if (ch.category == "pus" && !m_filterPus)      continue;
             if (ch.category == "scissors" && !m_filterScissors) continue;
-            if (ch.category == "urbino"   && !m_filterUrbino)   continue;
+            if (ch.category == "urbino" && !m_filterUrbino)   continue;
             pool.push_back(&ch);
         }
         m_selected = m_rng.Pick(pool);
@@ -125,8 +135,8 @@ void AppUI::RenderFilterBar()
             if (ch.category == "pus" && !m_filterPus)      continue;
             if (ch.category == "scissors" && !m_filterScissors) continue;
             if (ch.category == "urbino" && !m_filterUrbino)   continue;
-            if (ch.category == "pus"     || ch.category == "urbino")   defensePool.push_back(&ch);
-            if (ch.category == "scissors"|| ch.category == "urbino")   attackPool.push_back(&ch);
+            if (ch.category == "pus" || ch.category == "urbino")   defensePool.push_back(&ch);
+            if (ch.category == "scissors" || ch.category == "urbino")   attackPool.push_back(&ch);
         }
         m_selectedDefense = m_rng.Pick(defensePool);
         m_selectedAttack = m_rng.Pick(attackPool, false);
@@ -134,8 +144,8 @@ void AppUI::RenderFilterBar()
 
     ImGui::SameLine();
     if (ImGui::Button("Reload Assets")) {
-        m_selected        = nullptr;
-        m_selectedAttack  = nullptr;
+        m_selected = nullptr;
+        m_selectedAttack = nullptr;
         m_selectedDefense = nullptr;
         m_mgr.ReloadAssets();
     }
@@ -156,16 +166,16 @@ void AppUI::RenderCharacterGrid()
     }
 
     const ImGuiStyle& style = ImGui::GetStyle();
-    const float cellW   = kThumbSize + style.FramePadding.x * 2.f + style.ItemSpacing.x;
-    const float avail   = ImGui::GetContentRegionAvail().x;
+    const float cellW = kThumbSize + style.FramePadding.x * 2.f + style.ItemSpacing.x;
+    const float avail = ImGui::GetContentRegionAvail().x;
     const int   columns = std::max(1, static_cast<int>((avail + style.ItemSpacing.x) / cellW));
 
     int col = 0;
     for (auto& ch : chars) {
         // Respect active category filters
-        if (ch.category == "pus"      && !m_filterPus)      continue;
+        if (ch.category == "pus" && !m_filterPus)      continue;
         if (ch.category == "scissors" && !m_filterScissors) continue;
-        if (ch.category == "urbino"   && !m_filterUrbino)   continue;
+        if (ch.category == "urbino" && !m_filterUrbino)   continue;
 
         if (col > 0 && col % columns != 0)
             ImGui::SameLine();
@@ -176,8 +186,8 @@ void AppUI::RenderCharacterGrid()
             : ImVec4(0.3f, 0.3f, 0.3f, 0.7f);
 
         // Highlight the currently selected character (single or attack/defense)
-        const bool isSingle  = (m_selected == &ch);
-        const bool isAttack  = (m_selectedAttack  == &ch);
+        const bool isSingle = (m_selected == &ch);
+        const bool isAttack = (m_selectedAttack == &ch);
         const bool isDefense = (m_selectedDefense == &ch);
         const bool isSelected = isSingle || isAttack || isDefense;
         if (isSelected) {
@@ -212,7 +222,8 @@ void AppUI::RenderCharacterGrid()
                 ImVec4(0.f, 0.f, 0.f, 0.f),
                 tint);
             ImGui::PopStyleVar();
-        } else {
+        }
+        else {
             // Fallback when texture failed to load – btnId starts with "##"
             // so ImGui hides it; prefix the visible name separately.
             clicked = ImGui::Button(
@@ -268,7 +279,7 @@ void AppUI::RenderResultPanel()
     // ── Attack / Defense result ───────────────────────────────────────────────
     if (m_selectedAttack || m_selectedDefense) {
         const bool sameCharacter = (m_selectedAttack && m_selectedDefense &&
-                                    m_selectedAttack == m_selectedDefense);
+            m_selectedAttack == m_selectedDefense);
 
         auto renderSide = [&](const char* label, const Character* ch, ImVec4 labelColor) {
             ImGui::PushStyleColor(ImGuiCol_Text, labelColor);
@@ -292,19 +303,19 @@ void AppUI::RenderResultPanel()
             ImGui::Text("Name:     %s", ch->name.c_str());
             ImGui::Text("Team: %s", ch->category.c_str());
             ImGui::EndGroup();
-        };
+            };
 
         const ImVec4 purpleColor = ImVec4(0.7f, 0.2f, 0.9f, 1.f);
-        const ImVec4 blueColor   = ImVec4(0.3f, 0.6f, 1.f,  1.f);
-        const ImVec4 redColor    = ImVec4(1.f,  0.25f, 0.25f, 1.f);
+        const ImVec4 blueColor = ImVec4(0.3f, 0.6f, 1.f, 1.f);
+        const ImVec4 redColor = ImVec4(1.f, 0.25f, 0.25f, 1.f);
 
         renderSide("Defense (Pus / Urbino)",
-                   m_selectedDefense,
-                   sameCharacter ? purpleColor : blueColor);
+            m_selectedDefense,
+            sameCharacter ? purpleColor : blueColor);
         ImGui::Spacing();
         renderSide("Attack  (Scissors / Urbino)",
-                   m_selectedAttack,
-                   sameCharacter ? purpleColor : redColor);
+            m_selectedAttack,
+            sameCharacter ? purpleColor : redColor);
         return;
     }
 
@@ -315,6 +326,8 @@ void AppUI::RandomizeUpgradeMode()
 {
     m_selectedUtilities = m_rng.PickUnique(kUtilityOptions, 2);
     m_selectedSecondaries = m_rng.PickUnique(kSecondaryOptions, 2);
+    m_selectedMelee = m_rng.PickUnique(kMeleeOptions, 1);
+    m_selectedAwakening = m_rng.PickUnique(kAwakeningOptions, 1);
 
     m_weaponUpgradeResults.clear();
     m_characterUpgradeResults.clear();
@@ -323,14 +336,12 @@ void AppUI::RandomizeUpgradeMode()
     auto pickCategory = [this](const UpgradeCategoryDefinition& def) {
         UpgradeCategoryResult result;
         result.name = def.name;
-        result.upgrades = { def.upgrades[0], def.upgrades[1] };
-
-        std::vector<int> indexes = {0, 1};
+        result.upgrades = { "", "" }; // unused in category-name-only mode
+        std::vector<int> indexes = { 0, 1 };
         const std::vector<int> picked = m_rng.PickUnique(indexes, 1);
-        if (!picked.empty())
-            result.selectedIndex = picked.front();
+        result.selectedIndex = picked.empty() ? 0 : picked.front();
         return result;
-    };
+        };
 
     for (const auto& category : kWeaponUpgradeCategories)
         m_weaponUpgradeResults.push_back(pickCategory(category));
@@ -346,58 +357,102 @@ void AppUI::RenderUpgradeRandomizerTab()
         RandomizeUpgradeMode();
     }
 
-    auto renderPickList = [](const char* heading, const std::vector<std::string>& picks, std::size_t expectedCount) {
-        ImGui::Text("%s", heading);
-        if (picks.empty()) {
-            ImGui::TextDisabled("  Press randomize to generate picks.");
-            return;
-        }
+auto renderPickList = [](const char* heading, const std::vector<std::string>& picks, std::size_t expectedCount) {
+    ImGui::SetWindowFontScale(1.25f);   // bigger title
+    ImGui::Text("%s", heading);
+    ImGui::SetWindowFontScale(1.0f);    // reset
 
-        for (std::size_t i = 0; i < picks.size() && i < expectedCount; ++i)
-            ImGui::BulletText("%s", picks[i].c_str());
-    };
+    if (picks.empty()) {
+        ImGui::TextDisabled("  Press randomize to generate picks.");
+        return;
+    }
 
-    auto renderUpgradeGroup = [](const char* heading, const std::vector<UpgradeCategoryResult>& categories, const ImVec4& accentColor) {
-        ImGui::Spacing();
-        ImGui::Text("%s", heading);
+    for (std::size_t i = 0; i < picks.size() && i < expectedCount; ++i)
+        ImGui::BulletText("%s", picks[i].c_str());
+};
 
-        for (const auto& category : categories) {
-            ImGui::Text("%s", category.name.c_str());
-            for (int i = 0; i < 2; ++i) {
-                const bool isSelected = (category.selectedIndex == i);
-                const ImVec4 selectedColor = accentColor;
-                const ImVec4 normalColor = ImVec4(accentColor.x, accentColor.y, accentColor.z, 0.f);
-                ImGui::PushStyleColor(ImGuiCol_ChildBg, isSelected ? selectedColor : normalColor);
-                ImGui::PushStyleColor(ImGuiCol_Border, accentColor);
-                ImGui::PushID(category.name.c_str());
-                ImGui::PushID(i);
-                ImGui::BeginChild("upgrade_rect", ImVec2(260.f, 32.f), true);
-                if (isSelected)
-                    ImGui::Text("%s", category.upgrades[i].c_str());
-                ImGui::EndChild();
-                ImGui::PopID();
-                ImGui::PopID();
-                ImGui::PopStyleColor(2);
+    // addTopSpacing controls whether a spacing is added before the group
+    auto renderUpgradeGroup = [](const char* heading,
+        const std::vector<UpgradeCategoryResult>& categories,
+        const ImVec4& accentColor,
+        bool addTopSpacing) {
+            if (addTopSpacing)
+                ImGui::Spacing();
+
+            if (heading && heading[0] != '\0')
+                ImGui::Text("%s", heading);
+
+            for (const auto& category : categories) {
+                ImGui::Text("%s", category.name.c_str());
+                for (int i = 0; i < 2; ++i) {
+                    const bool isSelected = (category.selectedIndex == i);
+                    const ImVec4 selectedColor = accentColor;
+                    const ImVec4 normalColor = ImVec4(accentColor.x, accentColor.y, accentColor.z, 0.f);
+
+                    ImGui::PushStyleColor(ImGuiCol_ChildBg, isSelected ? selectedColor : normalColor);
+                    ImGui::PushStyleColor(ImGuiCol_Border, accentColor);
+
+                    // Rounded corners + thicker border
+                    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 10.0f);
+                    ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 2.0f);
+
+                    ImGui::PushID(category.name.c_str());
+                    ImGui::PushID(i);
+
+                    ImGui::BeginChild("upgrade_rect", ImVec2(260.f, 32.f), true);
+                    if (isSelected)
+                        ImGui::Text("%s", category.name.c_str()); // category-name-only mode
+                    ImGui::EndChild();
+
+                    ImGui::PopID();
+                    ImGui::PopID();
+
+                    ImGui::PopStyleVar(2);
+                    ImGui::PopStyleColor(2);
+                }
+                ImGui::Spacing();
             }
-            ImGui::Spacing();
-        }
-    };
+        };
 
-    const ImVec4 weaponColor    = ImVec4(0.20f, 0.55f, 1.00f, 1.f); // blue
+    const ImVec4 weaponColor = ImVec4(0.20f, 0.55f, 1.00f, 1.f); // blue
     const ImVec4 characterColor = ImVec4(0.20f, 0.75f, 0.35f, 1.f); // green
-    const ImVec4 abilityColor   = ImVec4(0.95f, 0.85f, 0.20f, 1.f); // yellow
+    const ImVec4 abilityColor = ImVec4(0.95f, 0.85f, 0.20f, 1.f); // yellow
 
-    renderPickList("Utility Picks (2)", m_selectedUtilities, 2);
-    renderPickList("Secondary Picks (2)", m_selectedSecondaries, 2);
+    renderPickList("Utility Picks", m_selectedUtilities, 2);
+    renderPickList("Secondary Picks", m_selectedSecondaries, 2);
+    renderPickList("Melee Pick", m_selectedMelee, 1);
+    renderPickList("Awakenings", m_selectedAwakening, 1);
+
+
+
 
     ImGui::Spacing();
     if (ImGui::BeginTable("UpgradeLayout", 2, ImGuiTableFlags_SizingStretchProp)) {
+        // Left column
         ImGui::TableNextColumn();
-        renderUpgradeGroup("Weapon Upgrades (1 per category)", m_weaponUpgradeResults, weaponColor);
+        const float leftStartY = ImGui::GetCursorPosY();
+        renderUpgradeGroup("", m_weaponUpgradeResults, weaponColor, false);
+        const float leftEndY = ImGui::GetCursorPosY();
+        const float leftHeight = leftEndY - leftStartY;
 
+        // Right column (NO GAP between these two groups)
         ImGui::TableNextColumn();
-        renderUpgradeGroup("Ability Upgrades (1 per category)", m_abilityUpgradeResults, abilityColor);
-        renderUpgradeGroup("Character Upgrades (1 per category)", m_characterUpgradeResults, characterColor);
+        const float rightStartY = ImGui::GetCursorPosY();
+        renderUpgradeGroup("", m_abilityUpgradeResults, abilityColor, false);
+        renderUpgradeGroup("", m_characterUpgradeResults, characterColor, false);
+        const float rightEndY = ImGui::GetCursorPosY();
+        const float rightHeight = rightEndY - rightStartY;
+
+        // Pad shorter side so bottoms align
+        if (leftHeight < rightHeight) {
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Dummy(ImVec2(0.f, rightHeight - leftHeight));
+        }
+        else if (rightHeight < leftHeight) {
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Dummy(ImVec2(0.f, leftHeight - rightHeight));
+        }
+
         ImGui::EndTable();
     }
 }
