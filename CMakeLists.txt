@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 project(CharacterRandomizer CXX)
+enable_testing()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -160,3 +161,10 @@ endif()
 set_target_properties(CharacterRandomizer PROPERTIES
     VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:CharacterRandomizer>"
 )
+
+add_executable(RandomizerTests
+    tests/RandomizerTests.cpp
+    src/Randomizer.cpp
+)
+target_include_directories(RandomizerTests PRIVATE src/)
+add_test(NAME RandomizerTests COMMAND RandomizerTests)

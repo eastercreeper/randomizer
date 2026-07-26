@@ -79,11 +79,14 @@ void AppUI::RenderFilterBar()
         std::vector<const Character*> attackPool;
         for (const auto& ch : m_mgr.GetCharacters()) {
             if (!ch.enabled) continue;
+            if (ch.category == "pus"      && !m_filterPus)      continue;
+            if (ch.category == "scissors" && !m_filterScissors) continue;
+            if (ch.category == "urbino"   && !m_filterUrbino)   continue;
             if (ch.category == "pus"     || ch.category == "urbino")   defensePool.push_back(&ch);
             if (ch.category == "scissors"|| ch.category == "urbino")   attackPool.push_back(&ch);
         }
         m_selectedDefense = m_rng.Pick(defensePool);
-        m_selectedAttack  = m_rng.Pick(attackPool);
+        m_selectedAttack  = m_rng.Pick(attackPool, false);
     }
 
     ImGui::SameLine();
