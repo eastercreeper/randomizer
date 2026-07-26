@@ -12,10 +12,10 @@ public:
     Randomizer();
 
     // Returns a pointer into the pool, or nullptr when the pool is empty.
-    const Character* Pick(const std::vector<const Character*>& pool);
+    const Character* Pick(const std::vector<const Character*>& pool, bool avoidImmediateRepeat = true);
 
 private:
-    void RefillBag(const std::vector<const Character*>& pool);
+    void RefillBag(const std::vector<const Character*>& pool, bool avoidImmediateRepeat);
 
     std::mt19937 m_rng;
 
