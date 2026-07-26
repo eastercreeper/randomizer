@@ -4,6 +4,10 @@ project(CharacterRandomizer CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(GLFW_USE_STATIC_MSVC_RUNTIME ON CACHE BOOL "" FORCE)
+
 include(FetchContent)
 
 # ── GLFW ──────────────────────────────────────────────────────────────────────
@@ -47,6 +51,8 @@ set(APP_SOURCES
     src/CharacterManager.cpp
     src/Randomizer.cpp
     src/AppUI.cpp
+    src/ConfigManager.cpp
+
 )
 
 # ── Windows application icon ──────────────────────────────────────────────────
@@ -106,7 +112,7 @@ if(EMBED_ASSETS)
     list(APPEND APP_SOURCES "${GENERATED_SOURCE}")
 endif()
 
-add_executable(CharacterRandomizer ${APP_SOURCES} ${IMGUI_SOURCES})
+add_executable(CharacterRandomizer WIN32 ${APP_SOURCES} ${IMGUI_SOURCES})
 
 target_include_directories(CharacterRandomizer PRIVATE
     src/

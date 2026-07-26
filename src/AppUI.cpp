@@ -1,4 +1,5 @@
 #include "AppUI.h"
+#include "ConfigManager.h"
 
 #include <imgui.h>
 
@@ -179,6 +180,9 @@ void AppUI::RenderCharacterGrid()
         if (clicked)
             ch.enabled = !ch.enabled;
 
+        ConfigManager::Instance().Set(ch.name, ch.enabled);
+        ConfigManager::Instance().Save();
+
         if (ImGui::IsItemHovered()) {
             ImGui::BeginTooltip();
             ImGui::Text("%s  [%s]", ch.name.c_str(), ch.category.c_str());
@@ -210,11 +214,7 @@ void AppUI::RenderResultPanel()
         ImGui::BeginGroup();
         ImGui::Spacing();
         ImGui::Text("Name:     %s", m_selected->name.c_str());
-        ImGui::Text("Category: %s", m_selected->category.c_str());
-        ImGui::Text("File:     %s", m_selected->filepath.c_str());
-        if (m_selected->width > 0)
-            ImGui::Text("Size:     %d x %d px",
-                        m_selected->width, m_selected->height);
+        ImGui::Text("Team: %s", m_selected->category.c_str());
         ImGui::EndGroup();
         return;
     }
@@ -244,10 +244,7 @@ void AppUI::RenderResultPanel()
             ImGui::BeginGroup();
             ImGui::Spacing();
             ImGui::Text("Name:     %s", ch->name.c_str());
-            ImGui::Text("Category: %s", ch->category.c_str());
-            ImGui::Text("File:     %s", ch->filepath.c_str());
-            if (ch->width > 0)
-                ImGui::Text("Size:     %d x %d px", ch->width, ch->height);
+            ImGui::Text("Team: %s", ch->category.c_str());
             ImGui::EndGroup();
         };
 

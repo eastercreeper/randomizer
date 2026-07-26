@@ -1,6 +1,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <Windows.h>
 
 // Include GLFW after the imgui backends so GLFW_INCLUDE_NONE is not needed –
 // the ImGui OpenGL3 backend uses its own bundled loader for modern GL calls,
@@ -11,6 +12,7 @@
 #include "CharacterManager.h"
 #include "Randomizer.h"
 #include "AppUI.h"
+#include "ConfigManager.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -59,6 +61,13 @@ int main()
     CharacterManager mgr;
     mgr.LoadAssets();
 
+    ConfigManager::Instance().load();
+
+    for (auto& ch : mgr.GetCharacters())
+    {
+        ch.enabled = ConfigManager::Instance().Get(ch.name, true);
+    }
+
     // Auto-size window width based on loaded character count, capped at 5 columns.
     {
         constexpr int kThumbSize   = 80;
@@ -103,4 +112,8 @@ int main()
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
+}
+
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+    return main();
 }
