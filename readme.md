@@ -9,6 +9,7 @@ A C++20 GUI application built with **Dear ImGui + GLFW + OpenGL 3.3**.
 - **Category filter checkboxes** (Pus / Scissors / Urbino)
 - **Randomize** button – picks one random character from the enabled + filtered pool and shows it enlarged with its name and category
 - **Randomize Attack/Defense** button – picks one defender (Pus/Urbino) and one attacker (Scissors/Urbino)
+- **Utility / Secondary / Upgrades** tab – randomizes 2 utility picks, 2 secondary picks, and constrained upgrade picks (one highlighted selection per upgrade category)
 - **Reload Assets** button – re-uploads embedded textures to the GPU (useful after a context reset)
 
 Supported image formats: PNG, JPG, JPEG, BMP, TGA (via stb_image).

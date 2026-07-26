@@ -4,6 +4,7 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <array>
 #include <string>
 #include <vector>
 
@@ -20,6 +21,36 @@ static ImVec2 FitInBox(int imgW, int imgH, float boxSize)
         return ImVec2(boxSize * aspect, boxSize);
 }
 
+struct UpgradeCategoryDefinition
+{
+    const char* name;
+    std::array<const char*, 2> upgrades;
+};
+
+static const std::vector<std::string> kUtilityOptions = {
+    "Utility 1", "Utility 2", "Utility 3", "Utility 4"
+};
+
+static const std::vector<std::string> kSecondaryOptions = {
+    "Secondary 1", "Secondary 2", "Secondary 3", "Secondary 4"
+};
+
+static const std::array<UpgradeCategoryDefinition, 4> kWeaponUpgradeCategories = {{
+    {"Weapon Category 1", {"Weapon Upgrade 1A", "Weapon Upgrade 1B"}},
+    {"Weapon Category 2", {"Weapon Upgrade 2A", "Weapon Upgrade 2B"}},
+    {"Weapon Category 3", {"Weapon Upgrade 3A", "Weapon Upgrade 3B"}},
+    {"Weapon Category 4", {"Weapon Upgrade 4A", "Weapon Upgrade 4B"}}
+}};
+
+static const std::array<UpgradeCategoryDefinition, 2> kCharacterUpgradeCategories = {{
+    {"Character Category 1", {"Character Upgrade 1A", "Character Upgrade 1B"}},
+    {"Character Category 2", {"Character Upgrade 2A", "Character Upgrade 2B"}}
+}};
+
+static const std::array<UpgradeCategoryDefinition, 1> kAbilityUpgradeCategories = {{
+    {"Ability Category", {"Ability Upgrade A", "Ability Upgrade B"}}
+}};
+
 AppUI::AppUI(CharacterManager& mgr, Randomizer& rng)
     : m_mgr(mgr), m_rng(rng)
 {}
@@ -35,11 +66,23 @@ void AppUI::Render()
                  ImGuiWindowFlags_NoCollapse |
                  ImGuiWindowFlags_NoTitleBar);
 
-    RenderFilterBar();
-    ImGui::Separator();
-    RenderCharacterGrid();
-    ImGui::Separator();
-    RenderResultPanel();
+    if (ImGui::BeginTabBar("RandomizerTabs")) {
+        if (ImGui::BeginTabItem("Characters")) {
+            RenderFilterBar();
+            ImGui::Separator();
+            RenderCharacterGrid();
+            ImGui::Separator();
+            RenderResultPanel();
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Utility / Secondary / Upgrades")) {
+            RenderUpgradeRandomizerTab();
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
+    }
 
     ImGui::End();
 }
@@ -266,4 +309,83 @@ void AppUI::RenderResultPanel()
     }
 
     ImGui::TextDisabled("Press 'Randomize' to pick a character.");
+}
+
+void AppUI::RandomizeUpgradeMode()
+{
+    m_selectedUtilities = m_rng.PickUnique(kUtilityOptions, 2);
+    m_selectedSecondaries = m_rng.PickUnique(kSecondaryOptions, 2);
+
+    m_weaponUpgradeResults.clear();
+    m_characterUpgradeResults.clear();
+    m_abilityUpgradeResults.clear();
+
+    auto pickCategory = [this](const UpgradeCategoryDefinition& def) {
+        UpgradeCategoryResult result;
+        result.name = def.name;
+        result.upgrades = { def.upgrades[0], def.upgrades[1] };
+
+        std::vector<int> indexes = {0, 1};
+        const std::vector<int> picked = m_rng.PickUnique(indexes, 1);
+        if (!picked.empty())
+            result.selectedIndex = picked.front();
+        return result;
+    };
+
+    for (const auto& category : kWeaponUpgradeCategories)
+        m_weaponUpgradeResults.push_back(pickCategory(category));
+    for (const auto& category : kCharacterUpgradeCategories)
+        m_characterUpgradeResults.push_back(pickCategory(category));
+    for (const auto& category : kAbilityUpgradeCategories)
+        m_abilityUpgradeResults.push_back(pickCategory(category));
+}
+
+void AppUI::RenderUpgradeRandomizerTab()
+{
+    if (ImGui::Button("Randomize Utility / Secondary / Upgrades")) {
+        RandomizeUpgradeMode();
+    }
+
+    auto renderPickList = [](const char* heading, const std::vector<std::string>& picks, std::size_t expectedCount) {
+        ImGui::Text("%s", heading);
+        if (picks.empty()) {
+            ImGui::TextDisabled("  Press randomize to generate picks.");
+            return;
+        }
+
+        for (std::size_t i = 0; i < picks.size() && i < expectedCount; ++i)
+            ImGui::BulletText("%s", picks[i].c_str());
+    };
+
+    auto renderUpgradeGroup = [](const char* heading, const std::vector<UpgradeCategoryResult>& categories) {
+        ImGui::Spacing();
+        ImGui::Text("%s", heading);
+
+        for (const auto& category : categories) {
+            ImGui::Text("%s", category.name.c_str());
+            for (int i = 0; i < 2; ++i) {
+                const bool isSelected = (category.selectedIndex == i);
+                const ImVec4 selectedColor = ImVec4(0.95f, 0.85f, 0.2f, 1.f);
+                const ImVec4 normalColor = ImVec4(0.25f, 0.25f, 0.25f, 1.f);
+                ImGui::PushStyleColor(ImGuiCol_ChildBg, isSelected ? selectedColor : normalColor);
+                ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.1f, 0.1f, 0.1f, 1.f));
+                ImGui::PushID(category.name.c_str());
+                ImGui::PushID(i);
+                ImGui::BeginChild("upgrade_rect", ImVec2(260.f, 32.f), true);
+                ImGui::Text("%s", category.upgrades[i].c_str());
+                ImGui::EndChild();
+                ImGui::PopID();
+                ImGui::PopID();
+                ImGui::PopStyleColor(2);
+            }
+            ImGui::Spacing();
+        }
+    };
+
+    renderPickList("Utility Picks (2)", m_selectedUtilities, 2);
+    renderPickList("Secondary Picks (2)", m_selectedSecondaries, 2);
+
+    renderUpgradeGroup("Weapon Upgrades (1 per category)", m_weaponUpgradeResults);
+    renderUpgradeGroup("Character Upgrades (1 per category)", m_characterUpgradeResults);
+    renderUpgradeGroup("Ability Upgrades (1 per category)", m_abilityUpgradeResults);
 }
