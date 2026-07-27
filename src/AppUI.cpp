@@ -124,9 +124,9 @@ void AppUI::Render()
 
     // Since the native title bar is hidden, give the window a visible
     // heading of its own.
-    ImGui::SetWindowFontScale(1.3f);
-    ImGui::TextUnformatted("Character Randomizer");
-    ImGui::SetWindowFontScale(1.0f);
+    ImGui::PushFont(gTitleFont);
+    ImGui::TextUnformatted("Strinover Randomizer");
+    ImGui::PopFont();
     ImGui::Separator();
     ImGui::Spacing();
 
@@ -356,11 +356,13 @@ void AppUI::RenderUpgradeRandomizerTab()
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.32f, 0.65f, 1.00f, 1.f));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.14f, 0.44f, 0.88f, 1.f));
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
-    ImGui::SetWindowFontScale(1.35f);
+    ImGui::PushFont(gButtonFont);
+
     if (ImGui::Button("Randomize Loadout", bigButtonSize)) {
         RandomizeUpgradeMode();
     }
-    ImGui::SetWindowFontScale(1.0f);
+
+    ImGui::PopFont();
     ImGui::PopStyleVar();
     ImGui::PopStyleColor(3);
 

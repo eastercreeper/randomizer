@@ -1,4 +1,7 @@
 #include "CharacterManager.h"
+
+#include <cstring>
+
 #include "TextureLoader.h"
 
 #ifdef EMBED_ASSETS
@@ -60,6 +63,11 @@ void CharacterManager::LoadEmbeddedAssets()
     // (the generator script sorts file paths before emitting them).
     for (std::size_t i = 0; i < kEmbeddedAssetCount; ++i) {
         const EmbeddedAsset& ea = kEmbeddedAssets[i];
+
+        // Ignore non-character assets
+        if (std::strcmp(ea.category, "font") == 0)
+            continue;
+
         Character ch;
         ch.name      = ea.name;
         ch.category  = ea.category;

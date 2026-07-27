@@ -27,6 +27,9 @@ public:
 
     std::vector<Character>&       GetCharacters()       { return m_characters; }
     const std::vector<Character>& GetCharacters() const { return m_characters; }
+    void FreeAllTextures();
+
+    std::vector<Character> m_characters;
 
 private:
 #ifdef EMBED_ASSETS
@@ -35,7 +38,4 @@ private:
     void ScanDirectory(const std::string& dirPath,
                        const std::string& category);
 #endif
-    void FreeAllTextures();
-
-    std::vector<Character> m_characters;
 };

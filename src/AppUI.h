@@ -2,9 +2,15 @@
 
 #include "CharacterManager.h"
 #include "Randomizer.h"
+
 #include <array>
 #include <string>
 #include <vector>
+#include <imgui.h>
+
+// Global fonts loaded in main.cpp
+extern ImFont* gTitleFont;
+extern ImFont* gButtonFont;
 
 // Owns all ImGui rendering for one frame.
 class AppUI
@@ -18,7 +24,6 @@ public:
 private:
     void RenderFilterBar();
     void RenderCharacterGrid();
-    void RenderResultPanel();
     void RenderUpgradeRandomizerTab();
     void RandomizeUpgradeMode();
 
@@ -39,10 +44,11 @@ private:
         int selectedIndex = -1;
     };
 
-    std::vector<std::string>        m_selectedUtilities;
-    std::vector<std::string>        m_selectedSecondaries;
-    std::vector<std::string>        m_selectedMelee;
-    std::vector<std::string>        m_selectedAwakening;
+    std::vector<std::string> m_selectedUtilities;
+    std::vector<std::string> m_selectedSecondaries;
+    std::vector<std::string> m_selectedMelee;
+    std::vector<std::string> m_selectedAwakening;
+
     std::vector<UpgradeCategoryResult> m_weaponUpgradeResults;
     std::vector<UpgradeCategoryResult> m_characterUpgradeResults;
     std::vector<UpgradeCategoryResult> m_abilityUpgradeResults;
