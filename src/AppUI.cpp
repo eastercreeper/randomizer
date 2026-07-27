@@ -325,7 +325,7 @@ void AppUI::RenderResultPanel()
 void AppUI::RandomizeUpgradeMode()
 {
     m_selectedUtilities = m_rng.PickUnique(kUtilityOptions, 2);
-    m_selectedSecondaries = m_rng.PickUnique(kSecondaryOptions, 2);
+    m_selectedSecondaries = m_rng.PickUnique(kSecondaryOptions, 1);
     m_selectedMelee = m_rng.PickUnique(kMeleeOptions, 1);
     m_selectedAwakening = m_rng.PickUnique(kAwakeningOptions, 1);
 
@@ -419,7 +419,7 @@ auto renderPickList = [](const char* heading, const std::vector<std::string>& pi
     const ImVec4 abilityColor = ImVec4(0.95f, 0.85f, 0.20f, 1.f); // yellow
 
     renderPickList("Utility Picks", m_selectedUtilities, 2);
-    renderPickList("Secondary Picks", m_selectedSecondaries, 2);
+    renderPickList("Secondary Picks", m_selectedSecondaries, 1);
     renderPickList("Melee Pick", m_selectedMelee, 1);
     renderPickList("Awakenings", m_selectedAwakening, 1);
 
