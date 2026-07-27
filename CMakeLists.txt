@@ -82,6 +82,7 @@ if(EMBED_ASSETS)
         "${CMAKE_SOURCE_DIR}/assets/pus/*"
         "${CMAKE_SOURCE_DIR}/assets/scissors/*"
         "${CMAKE_SOURCE_DIR}/assets/urbino/*"
+        "${CMAKE_SOURCE_DIR}/assets/font/*"
     )
     list(FILTER ASSET_FILES EXCLUDE REGEX "\\.gitkeep$")
 
@@ -153,6 +154,10 @@ if(NOT EMBED_ASSETS)
             "${CMAKE_SOURCE_DIR}/assets"
             "$<TARGET_FILE_DIR:CharacterRandomizer>/assets"
         COMMENT "Copying assets to output directory"
+
+            COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_SOURCE_DIR}/assets/font/comic.ttf"
+            "$<TARGET_FILE_DIR:CharacterRandomizer>/assets/font/comic.ttf"
     )
 endif()
 

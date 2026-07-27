@@ -52,6 +52,11 @@ int main()
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
+    ImFont* comicFont = io.Fonts->AddFontFromFileTTF(
+        "assets/font/comic.ttf",
+        18.0f
+    );
+
     ImGui::StyleColorsDark();
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);

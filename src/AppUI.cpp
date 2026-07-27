@@ -60,6 +60,50 @@ static const std::array<UpgradeCategoryDefinition, 2> kAbilityUpgradeCategories 
     {"Passive Skill"}
 } };
 
+// ── App-wide theme ───────────────────────────────────────────────────────────
+// One cohesive dark theme + accent color applied to the whole window, so
+// every tab shares the same spacing, rounding, and palette instead of each
+// widget picking its own look. Counts below must match the Pop* calls.
+static constexpr int kThemeVarCount = 10;
+static constexpr int kThemeColorCount = 15;
+
+static void PushAppTheme()
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(18.f, 16.f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.f, 6.f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.f, 8.f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(8.f, 6.f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.f);
+    ImGui::PushStyleVar(ImGuiStyleVar_GrabRounding, 6.f);
+    ImGui::PushStyleVar(ImGuiStyleVar_TabRounding, 6.f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarRounding, 8.f);
+    ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, 6.f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 8.f);
+
+    const ImVec4 accent(0.20f, 0.55f, 1.00f, 1.00f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.10f, 0.11f, 0.13f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.13f, 0.14f, 0.16f, 0.60f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.16f, 0.17f, 0.20f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.20f, 0.22f, 0.26f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.22f, 0.24f, 0.29f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.28f, 0.30f, 0.34f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.18f, 0.20f, 0.24f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.24f, 0.27f, 0.32f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, accent);
+    ImGui::PushStyleColor(ImGuiCol_Tab, ImVec4(0.14f, 0.15f, 0.18f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_TabHovered, ImVec4(0.24f, 0.50f, 0.90f, 0.80f));
+    ImGui::PushStyleColor(ImGuiCol_TabActive, accent);
+    ImGui::PushStyleColor(ImGuiCol_TabUnfocused, ImVec4(0.12f, 0.13f, 0.15f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_TabUnfocusedActive, ImVec4(0.18f, 0.30f, 0.50f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_CheckMark, accent);
+}
+
+static void PopAppTheme()
+{
+    ImGui::PopStyleColor(kThemeColorCount);
+    ImGui::PopStyleVar(kThemeVarCount);
+}
+
 AppUI::AppUI(CharacterManager& mgr, Randomizer& rng)
     : m_mgr(mgr), m_rng(rng)
 {
@@ -70,23 +114,34 @@ void AppUI::Render()
     const ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextWindowPos(ImVec2(0.f, 0.f));
     ImGui::SetNextWindowSize(io.DisplaySize);
+
+    PushAppTheme();
     ImGui::Begin("CharacterRandomizer", nullptr,
         ImGuiWindowFlags_NoResize |
         ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoCollapse |
         ImGuiWindowFlags_NoTitleBar);
 
+    // Since the native title bar is hidden, give the window a visible
+    // heading of its own.
+    ImGui::SetWindowFontScale(1.3f);
+    ImGui::TextUnformatted("Character Randomizer");
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::Separator();
+    ImGui::Spacing();
+
     if (ImGui::BeginTabBar("RandomizerTabs")) {
-        if (ImGui::BeginTabItem("Characters")) {
+        if (ImGui::BeginTabItem("Roster")) {
+            ImGui::Spacing();
             RenderFilterBar();
             ImGui::Separator();
+            ImGui::Spacing();
             RenderCharacterGrid();
-            ImGui::Separator();
-            RenderResultPanel();
             ImGui::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Utility / Secondary / Upgrades")) {
+        if (ImGui::BeginTabItem("Loadout")) {
+            ImGui::Spacing();
             RenderUpgradeRandomizerTab();
             ImGui::EndTabItem();
         }
@@ -95,13 +150,14 @@ void AppUI::Render()
     }
 
     ImGui::End();
+    PopAppTheme();
 }
 
 // ── Filter bar ────────────────────────────────────────────────────────────────
 
 void AppUI::RenderFilterBar()
 {
-    ImGui::Text("Filter:");
+    ImGui::TextDisabled("FILTER");
     ImGui::SameLine();
     ImGui::Checkbox("Pus", &m_filterPus);
     ImGui::SameLine();
@@ -109,7 +165,7 @@ void AppUI::RenderFilterBar()
     ImGui::SameLine();
     ImGui::Checkbox("Urbino", &m_filterUrbino);
 
-    ImGui::SameLine(0.f, 20.f);
+    ImGui::SameLine(0.f, 24.f);
 
     if (ImGui::Button("Randomize")) {
         m_selectedAttack = nullptr;
@@ -152,10 +208,17 @@ void AppUI::RenderFilterBar()
 }
 
 // ── Character grid ────────────────────────────────────────────────────────────
+// Note: the standalone results panel has been removed. The current pick(s)
+// are still visible via the colored highlight on the matching thumbnail(s)
+// below (blue = single pick, red = attack, blue-accent = defense,
+// purple = both).
 
 void AppUI::RenderCharacterGrid()
 {
-    ImGui::Text("Characters  (click thumbnail to enable / disable):");
+    ImGui::TextDisabled("ROSTER");
+    ImGui::SameLine();
+    ImGui::TextDisabled("— click a thumbnail to enable / disable");
+    ImGui::Spacing();
 
     auto& chars = m_mgr.GetCharacters();
     if (chars.empty()) {
@@ -251,77 +314,6 @@ void AppUI::RenderCharacterGrid()
     }
 }
 
-// ── Result panel ─────────────────────────────────────────────────────────────
-
-void AppUI::RenderResultPanel()
-{
-    ImGui::Text("Result:");
-
-    // ── Single-pick result ────────────────────────────────────────────────────
-    if (m_selected) {
-        if (m_selected->textureId != 0) {
-            const ImVec2 displaySize =
-                FitInBox(m_selected->width, m_selected->height, kResultSize);
-            ImGui::Image(
-                reinterpret_cast<ImTextureID>(
-                    static_cast<uintptr_t>(m_selected->textureId)),
-                displaySize);
-            ImGui::SameLine();
-        }
-        ImGui::BeginGroup();
-        ImGui::Spacing();
-        ImGui::Text("Name:     %s", m_selected->name.c_str());
-        ImGui::Text("Team: %s", m_selected->category.c_str());
-        ImGui::EndGroup();
-        return;
-    }
-
-    // ── Attack / Defense result ───────────────────────────────────────────────
-    if (m_selectedAttack || m_selectedDefense) {
-        const bool sameCharacter = (m_selectedAttack && m_selectedDefense &&
-            m_selectedAttack == m_selectedDefense);
-
-        auto renderSide = [&](const char* label, const Character* ch, ImVec4 labelColor) {
-            ImGui::PushStyleColor(ImGuiCol_Text, labelColor);
-            ImGui::Text("%s:", label);
-            ImGui::PopStyleColor();
-            if (!ch) {
-                ImGui::TextDisabled("  (none available)");
-                return;
-            }
-            if (ch->textureId != 0) {
-                const ImVec2 displaySize =
-                    FitInBox(ch->width, ch->height, kResultSize);
-                ImGui::Image(
-                    reinterpret_cast<ImTextureID>(
-                        static_cast<uintptr_t>(ch->textureId)),
-                    displaySize);
-                ImGui::SameLine();
-            }
-            ImGui::BeginGroup();
-            ImGui::Spacing();
-            ImGui::Text("Name:     %s", ch->name.c_str());
-            ImGui::Text("Team: %s", ch->category.c_str());
-            ImGui::EndGroup();
-            };
-
-        const ImVec4 purpleColor = ImVec4(0.7f, 0.2f, 0.9f, 1.f);
-        const ImVec4 blueColor = ImVec4(0.3f, 0.6f, 1.f, 1.f);
-        const ImVec4 redColor = ImVec4(1.f, 0.25f, 0.25f, 1.f);
-
-        renderSide("Defense (Pus / Urbino)",
-            m_selectedDefense,
-            sameCharacter ? purpleColor : blueColor);
-        ImGui::Spacing();
-        renderSide("Attack  (Scissors / Urbino)",
-            m_selectedAttack,
-            sameCharacter ? purpleColor : redColor);
-        return;
-    }
-
-    ImGui::TextDisabled("Press 'Randomize' to pick a character.");
-}
-
 void AppUI::RandomizeUpgradeMode()
 {
     m_selectedUtilities = m_rng.PickUnique(kUtilityOptions, 2);
@@ -353,23 +345,40 @@ void AppUI::RandomizeUpgradeMode()
 
 void AppUI::RenderUpgradeRandomizerTab()
 {
-    if (ImGui::Button("Randomize Utility / Secondary / Upgrades")) {
+    // ── Prominent, centered randomize button ────────────────────────────────
+    ImGui::Spacing();
+
+    const float availWidth = ImGui::GetContentRegionAvail().x;
+    const ImVec2 bigButtonSize(std::min(availWidth, 320.f), 44.f);
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (availWidth - bigButtonSize.x) * 0.5f);
+
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.20f, 0.55f, 1.00f, 1.f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.32f, 0.65f, 1.00f, 1.f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.14f, 0.44f, 0.88f, 1.f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+    ImGui::SetWindowFontScale(1.35f);
+    if (ImGui::Button("Randomize Loadout", bigButtonSize)) {
         RandomizeUpgradeMode();
     }
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(3);
 
-auto renderPickList = [](const char* heading, const std::vector<std::string>& picks, std::size_t expectedCount) {
-    ImGui::SetWindowFontScale(1.25f);   // bigger title
-    ImGui::Text("%s", heading);
-    ImGui::SetWindowFontScale(1.0f);    // reset
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
 
-    if (picks.empty()) {
-        ImGui::TextDisabled("  Press randomize to generate picks.");
-        return;
-    }
+    auto renderPickList = [](const char* heading, const std::vector<std::string>& picks, std::size_t expectedCount) {
+        ImGui::TextDisabled("%s", heading);
 
-    for (std::size_t i = 0; i < picks.size() && i < expectedCount; ++i)
-        ImGui::BulletText("%s", picks[i].c_str());
-};
+        if (picks.empty()) {
+            ImGui::TextDisabled("  Press Randomize Loadout to generate picks.");
+            return;
+        }
+
+        for (std::size_t i = 0; i < picks.size() && i < expectedCount; ++i)
+            ImGui::BulletText("%s", picks[i].c_str());
+        };
 
     // addTopSpacing controls whether a spacing is added before the group
     auto renderUpgradeGroup = [](const char* heading,
@@ -399,9 +408,15 @@ auto renderPickList = [](const char* heading, const std::vector<std::string>& pi
                     ImGui::PushID(category.name.c_str());
                     ImGui::PushID(i);
 
-                    ImGui::BeginChild("upgrade_rect", ImVec2(260.f, 32.f), true);
+                    ImGui::BeginChild("upgrade_rect",ImVec2(260.f, 32.f),true,ImGuiWindowFlags_NoScrollbar |ImGuiWindowFlags_NoScrollWithMouse);
                     if (isSelected)
-                        ImGui::Text("%s", category.name.c_str()); // category-name-only mode
+                    {
+                        float textHeight = ImGui::GetTextLineHeight();
+                        float y = (ImGui::GetWindowHeight() - textHeight) * 0.5f;
+
+                        ImGui::SetCursorPosY(y);
+                        ImGui::Text("%s", category.name.c_str());
+                    }
                     ImGui::EndChild();
 
                     ImGui::PopID();
@@ -418,13 +433,10 @@ auto renderPickList = [](const char* heading, const std::vector<std::string>& pi
     const ImVec4 characterColor = ImVec4(0.20f, 0.75f, 0.35f, 1.f); // green
     const ImVec4 abilityColor = ImVec4(0.95f, 0.85f, 0.20f, 1.f); // yellow
 
-    renderPickList("Utility Picks", m_selectedUtilities, 2);
-    renderPickList("Secondary Picks", m_selectedSecondaries, 1);
-    renderPickList("Melee Pick", m_selectedMelee, 1);
-    renderPickList("Awakenings", m_selectedAwakening, 1);
-
-
-
+    renderPickList("UTILITY", m_selectedUtilities, 2);
+    renderPickList("SECONDARY", m_selectedSecondaries, 1);
+    renderPickList("MELEE", m_selectedMelee, 1);
+    renderPickList("AWAKENING", m_selectedAwakening, 1);
 
     ImGui::Spacing();
     if (ImGui::BeginTable("UpgradeLayout", 2, ImGuiTableFlags_SizingStretchProp)) {
